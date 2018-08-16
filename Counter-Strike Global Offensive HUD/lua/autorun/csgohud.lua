@@ -115,17 +115,17 @@ else if CLIENT then
             else
                 surface.SetDrawColor(Color(255, 25, 25, 150))
             end
-            surface.DrawOutlinedRect(ScrW() * 0.064, ScrH() * 0.976, 75, 13)
+            surface.DrawOutlinedRect(ScrW() * 0.064, ScrH() * 0.976, ScrW() * 0.0545, ScrH() * 0.016)
             
             surface.SetDrawColor(Color(0, 0, 0, 120))
-            surface.DrawRect(ScrW() * 0.065, ScrH() * 0.977, 73, 11)
+            surface.DrawRect(ScrW() * 0.065, ScrH() * 0.977, ScrW() * 0.0535, ScrH() * 0.015)
 
             if LocalPlayer():GetNWBool("CSGOHUDHURT") == false and health > 20 then
                 surface.SetDrawColor(Color(r, g, b, 150))
             else
                 surface.SetDrawColor(Color(255, 25, 25, 150))
             end
-            surface.DrawRect(ScrW() * 0.0645, ScrH() * 0.977, math.Clamp(LocalPlayer():Health() / LocalPlayer():GetMaxHealth() * 73, 0, 73), 11)
+            surface.DrawRect(ScrW() * 0.0645, ScrH() * 0.977, LocalPlayer():Health() / LocalPlayer():GetMaxHealth() * ScrW() * 0.0535, ScrH() * 0.015)
 
             surface.SetDrawColor(Color(r, g, b, 150))
 	        surface.SetMaterial(Material("materials/csgohud/armor.png"))
@@ -138,13 +138,13 @@ else if CLIENT then
             end
 
             surface.SetDrawColor(Color(234, 235, 207, 50))
-            surface.DrawOutlinedRect(ScrW() * 0.19, ScrH() * 0.976, 75, 13)
+            surface.DrawOutlinedRect(ScrW() * 0.19, ScrH() * 0.976, ScrW() * 0.0545, ScrH() * 0.016)
             
             surface.SetDrawColor(Color(0, 0, 0, 120))
-            surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, 73, 11)
+            surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, ScrW() * 0.0535, ScrH() * 0.015)
 
             surface.SetDrawColor(Color(r, g, b, 150))
-            surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, math.Clamp(LocalPlayer():Armor() / 100 * 73, 0, 73), 11)
+            surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, LocalPlayer():Armor() / 100 * ScrW() * 0.0535, ScrH() * 0.015)
         
             surface.SetDrawColor(Color(0, 0, 0, 255))
 	        surface.SetTexture(surface.GetTextureID("gui/gradient"))

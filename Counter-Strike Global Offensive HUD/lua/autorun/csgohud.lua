@@ -28,7 +28,7 @@ if SERVER then
         GetConVar("csgo_hud_toggle"):SetBool(false)
         GetConVar("csgo_hud_r"):SetInt(200)
         GetConVar("csgo_hud_g"):SetInt(225)
-        GetConVar("csgo_hud_b"):SetInt(200)
+        GetConVar("csgo_hud_b"):SetInt(180)
     end)
 else if CLIENT then
         local hide = {

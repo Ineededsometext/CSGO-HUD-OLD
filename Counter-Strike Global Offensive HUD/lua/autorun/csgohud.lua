@@ -67,15 +67,27 @@ else if CLIENT then
             local lg = GetConVar("csgo_hud_g"):GetInt()
             local lb = GetConVar("csgo_hud_b"):GetInt()
 
-            local debounce = true
-
         hook.Add("HUDPaint", "CS:GO HUD", function()
-
+            
             if GetConVar("csgo_hud_toggle"):GetBool() == true then return end
+
+            local ply = LocalPlayer()
 
             local r = GetConVar("csgo_hud_r"):GetInt()
             local g = GetConVar("csgo_hud_g"):GetInt()
             local b = GetConVar("csgo_hud_b"):GetInt()
+
+            if r < 0 then
+                ply:ConCommand("csgo_hud_r ".."200")
+            end
+
+            if g < 0 then
+                ply:ConCommand("csgo_hud_g ".."225")
+            end
+
+            if b < 0 then
+                ply:ConCommand("csgo_hud_b ".."180")
+            end
 
             local health = LocalPlayer():Health()
             local armor = LocalPlayer():Armor()
@@ -103,8 +115,8 @@ else if CLIENT then
             else
                 surface.SetDrawColor(Color(255, 25, 25, 150))
             end
-	        surface.SetMaterial(Material("materials/csgohud/health.png"))
-	        surface.DrawTexturedRect(ScrW() * 0.005, ScrH() * 0.967, ScrW() * 0.0156, ScrW() * 0.0156)
+	    surface.SetMaterial(Material("materials/csgohud/health.png"))
+	    surface.DrawTexturedRect(ScrW() * 0.005, ScrH() * 0.967, ScrW() * 0.0156, ScrW() * 0.0156)
 
             if health > 20 then
                 if health <= 100 then
@@ -143,7 +155,8 @@ else if CLIENT then
                 lb = Lerp(4 * FrameTime(), lb, 25)
                 surface.SetDrawColor(Color(lr, lg, lb, 150))
             end
-            surface.DrawRect(ScrW() * 0.0645, ScrH() * 0.977, LocalPlayer():Health() / LocalPlayer():GetMaxHealth() * ScrW() * 0.0535, ScrH() * 0.015)
+
+            surface.DrawRect(ScrW() * 0.0645, ScrH() * 0.977, math.Clamp(health / LocalPlayer():GetMaxHealth() * ScrW() * 0.0535, 0, ScrW() * 0.0535), ScrH() * 0.015)
 
             surface.SetDrawColor(Color(r, g, b, 150))
 	    surface.SetMaterial(Material("materials/csgohud/armor.png"))
@@ -162,8 +175,8 @@ else if CLIENT then
             surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, ScrW() * 0.0535, ScrH() * 0.015)
 
             surface.SetDrawColor(Color(r, g, b, 150))
-            surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, LocalPlayer():Armor() / 100 * ScrW() * 0.0535, ScrH() * 0.015)
-        
+            surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, math.Clamp(LocalPlayer():Armor() / 100 * ScrW() * 0.0535, 0, ScrW() * 0.0535), ScrH() * 0.015)
+
             surface.SetDrawColor(Color(0, 0, 0, 255))
 	    surface.SetTexture(surface.GetTextureID("gui/gradient"))
             surface.DrawTexturedRectRotated(ScrW() * 0.925, ScrH() * 0.978, ScrW() * 0.16, ScrW() * 0.025, 180)

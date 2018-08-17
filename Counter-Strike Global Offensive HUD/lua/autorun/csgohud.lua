@@ -14,11 +14,11 @@ if SERVER then
         ply:SetNWBool("CSGOHUDHURT", true)
 
         if not timer.Exists("CSGOHUDHURT") then
-            timer.Create("CSGOHUDHURT", 0.25, 1, function()
+            timer.Create("CSGOHUDHURT", 0.4, 1, function()
                 ply:SetNWBool("CSGOHUDHURT", false)
             end)
         else
-            timer.Adjust("CSGOHUDHURT", 0.25, 1, function()
+            timer.Adjust("CSGOHUDHURT", 0.4, 1, function()
                 ply:SetNWBool("CSGOHUDHURT", false)
             end)
         end
@@ -63,6 +63,12 @@ else if CLIENT then
             antialiasing = true
         })
 
+            local lr = GetConVar("csgo_hud_r"):GetInt()
+            local lg = GetConVar("csgo_hud_g"):GetInt()
+            local lb = GetConVar("csgo_hud_b"):GetInt()
+
+            local debounce = true
+
         hook.Add("HUDPaint", "CS:GO HUD", function()
 
             if GetConVar("csgo_hud_toggle"):GetBool() == true then return end
@@ -90,7 +96,7 @@ else if CLIENT then
 
             surface.SetDrawColor(Color(0, 0, 0, 225))
             surface.SetTexture(surface.GetTextureID("gui/gradient"))
-	        surface.DrawTexturedRect(0, ScrH() * 0.956, ScrW() * 0.3, ScrH() * 0.05)
+	    surface.DrawTexturedRect(0, ScrH() * 0.956, ScrW() * 0.3, ScrH() * 0.05)
         
             if health > 20 then
                 surface.SetDrawColor(Color(r, g, b, 150))
@@ -111,9 +117,15 @@ else if CLIENT then
             end
         
             if LocalPlayer():GetNWBool("CSGOHUDHURT") == false and health > 20 then
-                surface.SetDrawColor(Color(200, 225, 180, 150))
+                lr = Lerp(4 * FrameTime(), lr, r)
+                lg = Lerp(4 * FrameTime(), lg, g)
+                lb = Lerp(4 * FrameTime(), lb, b)
+                surface.SetDrawColor(Color(lr, lg, lb, 150))
             else
-                surface.SetDrawColor(Color(255, 25, 25, 150))
+                lr = Lerp(4 * FrameTime(), lr, 255)
+                lg = Lerp(4 * FrameTime(), lg, 25)
+                lb = Lerp(4 * FrameTime(), lb, 25)
+                surface.SetDrawColor(Color(lr, lg, lb, 150))
             end
             surface.DrawOutlinedRect(ScrW() * 0.064, ScrH() * 0.976, ScrW() * 0.0545, ScrH() * 0.016)
             
@@ -121,15 +133,21 @@ else if CLIENT then
             surface.DrawRect(ScrW() * 0.065, ScrH() * 0.977, ScrW() * 0.0535, ScrH() * 0.015)
 
             if LocalPlayer():GetNWBool("CSGOHUDHURT") == false and health > 20 then
-                surface.SetDrawColor(Color(r, g, b, 150))
+                lr = Lerp(4 * FrameTime(), lr, r)
+                lg = Lerp(4 * FrameTime(), lg, g)
+                lb = Lerp(4 * FrameTime(), lb, b)
+                surface.SetDrawColor(Color(lr, lg, lb, 150))
             else
-                surface.SetDrawColor(Color(255, 25, 25, 150))
+                lr = Lerp(4 * FrameTime(), lr, 255)
+                lg = Lerp(4 * FrameTime(), lg, 25)
+                lb = Lerp(4 * FrameTime(), lb, 25)
+                surface.SetDrawColor(Color(lr, lg, lb, 150))
             end
             surface.DrawRect(ScrW() * 0.0645, ScrH() * 0.977, LocalPlayer():Health() / LocalPlayer():GetMaxHealth() * ScrW() * 0.0535, ScrH() * 0.015)
 
             surface.SetDrawColor(Color(r, g, b, 150))
-	        surface.SetMaterial(Material("materials/csgohud/armor.png"))
-	        surface.DrawTexturedRect(ScrW() * 0.13, ScrH() * 0.967, ScrW() * 0.0156, ScrW() * 0.0156)
+	    surface.SetMaterial(Material("materials/csgohud/armor.png"))
+	    surface.DrawTexturedRect(ScrW() * 0.13, ScrH() * 0.967, ScrW() * 0.0156, ScrW() * 0.0156)
 
             if armor <= 100 then
                 draw.SimpleText(armor, "GOFontLarge", ScrW() * 0.166, ScrH() * 0.956, Color(r, g, b, 150), TEXT_ALIGN_CENTER)
@@ -147,7 +165,7 @@ else if CLIENT then
             surface.DrawRect(ScrW() * 0.191, ScrH() * 0.977, LocalPlayer():Armor() / 100 * ScrW() * 0.0535, ScrH() * 0.015)
         
             surface.SetDrawColor(Color(0, 0, 0, 255))
-	        surface.SetTexture(surface.GetTextureID("gui/gradient"))
+	    surface.SetTexture(surface.GetTextureID("gui/gradient"))
             surface.DrawTexturedRectRotated(ScrW() * 0.925, ScrH() * 0.978, ScrW() * 0.16, ScrW() * 0.025, 180)
         
             surface.SetDrawColor(Color(r, g, b, 255))

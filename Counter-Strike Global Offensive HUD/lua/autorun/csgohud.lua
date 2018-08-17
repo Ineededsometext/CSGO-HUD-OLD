@@ -1,5 +1,8 @@
 if SERVER then
     AddCSLuaFile()
+
+    util.AddNetworkString("CSGOHUDSETNW")
+
     resource.AddFile("resource/fonts/stratum.ttf")
     resource.AddFile("materials/csgohud/health.png")
     resource.AddFile("materials/csgohud/armor.png")
@@ -10,15 +13,26 @@ if SERVER then
     CreateClientConVar("csgo_hud_g", "225", true, false, "Use this to increase or decrease green.")
     CreateClientConVar("csgo_hud_b", "180", true, false, "Use this to increase or decrease blue.")
 
+    net.Receive("CSGOHUDSETNW", function()
+        local netply = net.ReadEntity()
+        netply:SetNWBool("CSGOHUDSHOOT", true)
+
+        if not timer.Exists("CSGOHUDSHOOT"..netply:UserID()) then
+            timer.Create("CSGOHUDSHOOT"..netply:UserID(), netply:GetActiveWeapon():SequenceDuration() * 0.25, 1, function()
+                netply:SetNWBool("CSGOHUDSHOOT", false)
+            end)
+        end
+    end)
+
     hook.Add("PlayerHurt", "PlayerHurt", function(ply)
         ply:SetNWBool("CSGOHUDHURT", true)
 
-        if not timer.Exists("CSGOHUDHURT") then
-            timer.Create("CSGOHUDHURT", 0.4, 1, function()
+        if not timer.Exists("CSGOHUDHURT"..ply:UserID()) then
+            timer.Create("CSGOHUDHURT"..ply:UserID(), 0.4, 1, function()
                 ply:SetNWBool("CSGOHUDHURT", false)
             end)
         else
-            timer.Adjust("CSGOHUDHURT", 0.4, 1, function()
+            timer.Adjust("CSGOHUDHURT"..ply:UserID(), 0.4, 1, function()
                 ply:SetNWBool("CSGOHUDHURT", false)
             end)
         end
@@ -29,6 +43,14 @@ if SERVER then
         GetConVar("csgo_hud_r"):SetInt(200)
         GetConVar("csgo_hud_g"):SetInt(225)
         GetConVar("csgo_hud_b"):SetInt(180)
+    end)
+
+    local weapon_, ammo_, oldammo_
+
+    hook.Add("PlayerSwitchWeapon", "Switched Weapon", function()
+        weapon_ = nil
+        ammo_ = nil
+        oldammo_ = nil
     end)
 else if CLIENT then
         local hide = {
@@ -63,9 +85,30 @@ else if CLIENT then
             antialiasing = true
         })
 
-            local lr = GetConVar("csgo_hud_r"):GetInt()
-            local lg = GetConVar("csgo_hud_g"):GetInt()
-            local lb = GetConVar("csgo_hud_b"):GetInt()
+        local lr, lg, lb = GetConVar("csgo_hud_r"):GetInt(), GetConVar("csgo_hud_g"):GetInt(), GetConVar("csgo_hud_b"):GetInt()
+        local lr2, lg2, lb2, la2, lposx2 = GetConVar("csgo_hud_r"):GetInt(), GetConVar("csgo_hud_g"):GetInt(), GetConVar("csgo_hud_b"):GetInt(), 255, ScrW() * 0.96
+
+        hook.Add("Think", "Shoot", function()
+            local ply = LocalPlayer()
+
+            if IsValid(ply:GetActiveWeapon()) then
+                ammo_ = ply:GetActiveWeapon():Clip1()
+            end
+
+            if ply:KeyDown(IN_ATTACK) and ammo_ < oldammo_ then
+                net.Start("CSGOHUDSETNW")
+                    net.WriteEntity(LocalPlayer())
+                net.SendToServer()
+            end
+
+            if oldammo_ == nil or 0 then
+                oldammo_ = ammo_
+            end
+
+            if ammo_ < oldammo_ then
+                oldammo_ = ammo_
+            end
+        end)
 
         hook.Add("HUDPaint", "CS:GO HUD", function()
             
@@ -73,9 +116,7 @@ else if CLIENT then
 
             local ply = LocalPlayer()
 
-            local r = GetConVar("csgo_hud_r"):GetInt()
-            local g = GetConVar("csgo_hud_g"):GetInt()
-            local b = GetConVar("csgo_hud_b"):GetInt()
+            local r, g, b = GetConVar("csgo_hud_r"):GetInt(), GetConVar("csgo_hud_g"):GetInt(), GetConVar("csgo_hud_b"):GetInt()
 
             if r < 0 then
                 ply:ConCommand("csgo_hud_r ".."200")
@@ -195,30 +236,122 @@ else if CLIENT then
                 if clip == -1 or LocalPlayer():InVehicle() then
                     draw.SimpleText(ammo, "GOFontMedium", ScrW() * 0.935, ScrH() * 0.963, Color(r, g, b, 230), TEXT_ALIGN_CENTER)
                     
-                    if ammo >= 1 then
-                        for i = 1, math.Clamp(ammo, 1, 5) do
-                            surface.DrawTexturedRect(ScrW() * 0.985 - i * 10, ScrH() * 0.965, ScrW() * 0.017, ScrW() * 0.015)
-                        end
-                    end
-
                     return
                 end
 
-                if string.len(clip) > 3 then
-                    clip = string.sub(clip, 1, 3)
-                end
-
-                if string.len(ammo) > 3 then
-                    ammo = string.sub(ammo, 1, 3)
-                end
-
-                draw.SimpleText(clip, "GOFontMedium", ScrW() * 0.91, ScrH() * 0.963, Color(r, g, b, 230), TEXT_ALIGN_RIGHT)
-                draw.SimpleText("/", "GOFontSmall", ScrW() * 0.92, ScrH() * 0.9675, Color(r, g, b, 230), TEXT_ALIGN_RIGHT)
-                draw.SimpleText(ammo, "GOFontSmall", ScrW() * 0.925, ScrH() * 0.97, Color(r, g, b, 230), TEXT_ALIGN_LEFT)
+                draw.SimpleText(clip, "GOFontLarge", ScrW() * 0.915, ScrH() * 0.956, Color(r, g, b, 230), TEXT_ALIGN_RIGHT)
+                draw.SimpleText("/", "GOFontSmall", ScrW() * 0.925, ScrH() * 0.9675, Color(r, g, b, 230), TEXT_ALIGN_RIGHT)
+                draw.SimpleText(ammo, "GOFontSmall", ScrW() * 0.927, ScrH() * 0.97, Color(r, g, b, 230), TEXT_ALIGN_LEFT)
                 
                 if clip >= 1 then
-                    for i = 1, math.Clamp(clip, 1, 5) do
-                        surface.DrawTexturedRect(ScrW() * 0.985 - i * 10, ScrH() * 0.965, ScrW() * 0.017, ScrW() * 0.015)
+                    surface.DrawTexturedRectRotated(ScrW() * 0.96, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                    if clip == 1 then
+                        if LocalPlayer():GetNWBool("CSGOHUDSHOOT") == false then
+                            lr2 = Lerp(20 * FrameTime(), lr2, r)
+                            lg2 = Lerp(20 * FrameTime(), lg2, g)
+                            lb2 = Lerp(20 * FrameTime(), lb2, b)
+                            la2 = Lerp(20 * FrameTime(), la2, 255)
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(ScrW() * 0.96, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        else
+                            lr2 = Lerp(10 * FrameTime(), lr2, 0)
+                            lg2 = Lerp(10 * FrameTime(), lg2, 0)
+                            lb2 = Lerp(10 * FrameTime(), lb2, 0)
+                            la2 = Lerp(10 * FrameTime(), la2, 0)
+                            lposx2 = Lerp(10 * FrameTime(), ScrW() * 0.96, ScrW() * 0.965)
+
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(lposx2, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        end
+                    end
+                end
+
+                if clip >= 2 then
+                    surface.DrawTexturedRectRotated(ScrW() * 0.965, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                    if clip == 2 then
+                        if LocalPlayer():GetNWBool("CSGOHUDSHOOT") == false then
+                            lr2 = Lerp(20 * FrameTime(), lr2, r)
+                            lg2 = Lerp(20 * FrameTime(), lg2, g)
+                            lb2 = Lerp(20 * FrameTime(), lb2, b)
+                            la2 = Lerp(20 * FrameTime(), la2, 255)
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(ScrW() * 0.965, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        else
+                            lr2 = Lerp(10 * FrameTime(), lr2, 0)
+                            lg2 = Lerp(10 * FrameTime(), lg2, 0)
+                            lb2 = Lerp(10 * FrameTime(), lb2, 0)
+                            la2 = Lerp(10 * FrameTime(), la2, 0)
+                            lposx2 = Lerp(10 * FrameTime(), ScrW() * 0.965, ScrW() * 0.97)
+
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(lposx2, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        end
+                    end
+                end
+
+                if clip >= 3 then
+                    surface.DrawTexturedRectRotated(ScrW() * 0.97, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                    if clip == 3 then
+                        if LocalPlayer():GetNWBool("CSGOHUDSHOOT") == false then
+                            lr2 = Lerp(20 * FrameTime(), lr2, r)
+                            lg2 = Lerp(20 * FrameTime(), lg2, g)
+                            lb2 = Lerp(20 * FrameTime(), lb2, b)
+                            la2 = Lerp(20 * FrameTime(), la2, 255)
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(ScrW() * 0.97, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        else
+                            lr2 = Lerp(10 * FrameTime(), lr2, 0)
+                            lg2 = Lerp(10 * FrameTime(), lg2, 0)
+                            lb2 = Lerp(10 * FrameTime(), lb2, 0)
+                            la2 = Lerp(10 * FrameTime(), la2, 0)
+                            lposx2 = Lerp(10 * FrameTime(), ScrW() * 0.97, ScrW() * 0.975)
+
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(lposx2, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        end
+                    end
+                end
+
+                if clip >= 4 then
+                    surface.DrawTexturedRectRotated(ScrW() * 0.975, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                    if clip == 4 then
+                        if LocalPlayer():GetNWBool("CSGOHUDSHOOT") == false then
+                            lr2 = Lerp(20 * FrameTime(), lr2, r)
+                            lg2 = Lerp(20 * FrameTime(), lg2, g)
+                            lb2 = Lerp(20 * FrameTime(), lb2, b)
+                            la2 = Lerp(20 * FrameTime(), la2, 255)
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(ScrW() * 0.975, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        else
+                            lr2 = Lerp(10 * FrameTime(), lr2, 0)
+                            lg2 = Lerp(10 * FrameTime(), lg2, 0)
+                            lb2 = Lerp(10 * FrameTime(), lb2, 0)
+                            la2 = Lerp(10 * FrameTime(), la2, 0)
+                            lposx2 = Lerp(10 * FrameTime(), ScrW() * 0.975, ScrW() * 0.98)
+
+                            surface.SetDrawColor(lr2, lg2, lb2, la2)
+                            surface.DrawTexturedRectRotated(lposx2, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                        end
+                    end
+                end
+
+                if clip >= 5 then
+                    if LocalPlayer():GetNWBool("CSGOHUDSHOOT") == false then
+                        lr2 = Lerp(20 * FrameTime(), lr2, r)
+                        lg2 = Lerp(20 * FrameTime(), lg2, g)
+                        lb2 = Lerp(20 * FrameTime(), lb2, b)
+                        la2 = Lerp(20 * FrameTime(), la2, 255)
+                        surface.SetDrawColor(lr2, lg2, lb2, la2)
+                        surface.DrawTexturedRectRotated(ScrW() * 0.98, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
+                    else
+                        lr2 = Lerp(10 * FrameTime(), lr2, 0)
+                        lg2 = Lerp(10 * FrameTime(), lg2, 0)
+                        lb2 = Lerp(10 * FrameTime(), lb2, 0)
+                        la2 = Lerp(10 * FrameTime(), la2, 0)
+                        lposx2 = Lerp(10 * FrameTime(), ScrW() * 0.98, ScrW() * 0.985)
+
+                        surface.SetDrawColor(lr2, lg2, lb2, la2)
+                        surface.DrawTexturedRectRotated(lposx2, ScrH() * 0.982, ScrW() * 0.015, ScrW() * 0.0125, 0)
                     end
                 end
             end
